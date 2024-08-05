@@ -1,0 +1,18 @@
+---
+- name: Configurar archivo app.properties para Tomcat
+  hosts: centos
+  become: yes
+  tasks:
+    
+    - name: Crear archivo app.properties con las configuraciones
+      copy:
+        dest: /home/tomcat/contenedor/docker-tomcat-tutorial/app.properties
+        content: |
+          tipoDB=mysql
+          jdbcURL=jdbc:mysql://192.168.1.100:3306/todo
+          jdbcUsername=todo
+          jdbcPassword=Prueba2024!
+        owner: tomcat
+        group: tomcat
+        mode: '0644'
+...

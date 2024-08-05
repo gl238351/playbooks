@@ -1,0 +1,98 @@
+---
+- name: Playbook para instalar Podman y configurar Tomcat en CentOS
+  hosts: centos
+  become: yes
+  tasks:
+    - name: Crear usuario tomcat
+      user:
+        name: tomcat
+        comment: "Usuario para correr Tomcat"
+        home: /home/tomcat
+        shell: /bin/bash
+        createhome: yes
+
+    - name: Instalar Podman (DNF Backend)
+      dnf:
+        name: podman
+        state: present
+
+    - name: Instalar Git
+      dnf:
+        name: git
+        state: present
+
+    - name: Crear directorio para almacenar el git
+      file:
+        path: /home/tomcat/contenedor
+        state: directory
+        owner: tomcat
+        group: tomcat
+        mode: '0755'
+
+   # - name: Clonar el repositorio de Git
+    #  git:
+     #  repo: https://github.com/emverdes/docker-tomcat-tutorial.git
+      #  dest: /home/tomcat/contenedor/docker-tomcat-tutorial
+       # clone: yes
+
+- name: Configurar archivo Containerfile para Docker Tomcat
+  hosts: centos
+  become: yes
+  tasks:
+    - name: Asegurarse de que el directorio existe
+      file:
+        path: /home/tomcat/contenedor/docker-tomcat-tutorial
+        state: directory
+        owner: tomcat
+        group: tomcat
+        mode: '0755'
+    
+    - name: Crear archivo Containerfile con la configuración necesaria
+      copy:
+        dest: /home/tomcat/contenedor/docker-tomcat-tutorial/Containerfile
+        content: |
+          FROM quay.io/centos/centos:stream9
+          #LABEL maintainer="emverdes@gmail.com"
+
+          # Instalar Java, iputils y curl con la opción --allowerasing
+          RUN dnf install -y java-11-openjdk iputils curl --allowerasing && dnf clean all
+
+          RUN mkdir /opt/tomcat
+
+          # Probar conectividad de red con curl
+          #RUN curl -I https://www.google.com
+
+          # Probar conectividad de red con ping  
+          RUN ping -c 4 google.com
+
+          # Descargar y extraer Tomcat
+          RUN curl -v -O https://ftp.unicamp.br/pub/apache/tomcat/tomcat-8/v8.5.73/bin/apache-tomcat-8.5.73.tar.gz && \
+              tar xvfz apache-tomcat-8.5.73.tar.gz && \
+              mv apache-tomcat-8.5.73/* /opt/tomcat/
+          # Añadir archivos WAR a la carpeta de aplicaciones web de Tomcat
+          ADD sample.war /opt/tomcat/webapps/
+          ADD todo.war /opt/tomcat/webapps/
+
+          # Añadir el archivo de propiedades de configuración
+          ADD app.properties /opt/config/
+
+          # Listar el contenido del directorio de aplicaciones web de Tomcat para verificar
+          RUN ls -lah /opt/tomcat/webapps
+
+          # Exponer el puerto 8080
+          EXPOSE 8080
+
+          # Comando para ejecutar Tomcat
+          CMD ["/opt/tomcat/bin/catalina.sh", "run"]
+        owner: tomcat
+        group: tomcat
+        mode: '0644'
+
+    - name: Copiar archivo todo.war
+      copy:
+        src: /home/soporte/playbooks/todo.war
+        dest: /home/tomcat/contenedor/docker-tomcat-tutorial
+        owner: tomcat
+        group: tomcat
+        mode: '0644'
+...

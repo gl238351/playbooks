@@ -1,0 +1,135 @@
+---
+- name: MySQL
+  hosts: ubuntu
+  become: yes
+  tasks:
+    - name: Crear archivo /root/.my.cnf con las credenciales de MySQL
+      copy:
+        dest: /root/.my.cnf
+        content: |
+          [client]
+          user=root
+          password=Laboratorio2024
+        owner: root
+        group: root
+        mode: '0600'
+
+    - name: Instalar dependencias de Python
+      apt:
+        name: python3-pip
+        state: present
+
+    - name: Instalar MySQL
+      apt:
+        name: mysql-server
+        state: present
+
+    - name: Instalar MySQLClient
+      apt:
+        name: mysql-client
+        state: present
+
+    - name: Instalar Python
+      apt:
+        name: python3-mysqldb
+        state: present
+
+    - name: Iniciar el servicio MySQL y asegurarse de que esté habilitado
+      service:
+        name: mysql
+        state: started
+        enabled: yes
+
+    - name: Establecer contraseña de root para MySQL
+      mysql_user:
+        name: root
+        password: "Laboratorio2024"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        host: localhost
+        state: present
+
+    - name: Asegurarse de que la cuenta root tenga todos los privilegios
+      mysql_user:
+        name: root
+        host: localhost
+        priv: '*.*:ALL,GRANT'
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        state: present
+
+    - name: Crear base de datos 'todo'
+      mysql_db:
+        name: todo
+        state: present
+        login_user: root
+        login_password: "Laboratorio2024"
+
+    - name: Crear tabla 'users'
+      mysql_query:
+        login_user: root
+        login_password: "Laboratorio2024"
+        query: |
+          USE todo;
+          CREATE TABLE IF NOT EXISTS `users` (
+            `id` int(3) NOT NULL AUTO_INCREMENT,
+            `first_name` varchar(20) DEFAULT NULL,
+            `last_name` varchar(20) DEFAULT NULL,
+            `username` varchar(250) DEFAULT NULL,
+            `password` varchar(20) DEFAULT NULL,
+            PRIMARY KEY (`id`)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+    - name: Crear tabla 'todos'
+      mysql_query:
+        login_user: root
+        login_password: "Laboratorio2024"
+        query: |
+          USE todo;
+          CREATE TABLE IF NOT EXISTS `todos` (
+            `id` bigint(20) NOT NULL AUTO_INCREMENT,
+            `description` varchar(255) DEFAULT NULL,
+            `is_done` bit(1) NOT NULL,
+            `target_date` datetime(6) DEFAULT NULL,
+            `username` varchar(255) DEFAULT NULL,
+            `title` varchar(255) DEFAULT NULL,
+            PRIMARY KEY (`id`)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+    - name: Crear usuario 'todo' y otorgar privilegios
+      mysql_user:
+        name: todo
+        host: '%'
+        password: "Prueba2024!"
+        priv: 'todo.*:ALL'
+        login_user: root
+        login_password: "Laboratorio2024"
+        state: present
+
+    - name: Refrescar privilegios de MySQL
+      mysql_query:
+        login_user: root
+        login_password: "Laboratorio2024"
+        query: "FLUSH PRIVILEGES;"
+
+    - name: Configure MySQL my.cnf
+      blockinfile:
+        path: /etc/mysql/my.cnf
+        block: |
+          # Archivo de configuración global de MySQL
+
+          [mysqld]
+          bind-address = 0.0.0.0
+        marker: "# {mark} ANSIBLE MANAGED BLOCK"
+      notify: restart mysql
+
+    - name: Open MySQL port 3306 in UFW
+      ufw:
+        rule: allow
+        port: 3306
+        proto: tcp
+
+  handlers:
+    - name: restart mysql
+      service:
+        name: mysql
+        state: restarted
+...
