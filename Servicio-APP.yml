@@ -1,0 +1,39 @@
+---
+- name: Configurar inicio del servicio con SystemD
+  hosts: centos
+  become: yes
+
+  tasks:
+    - name: Crear el archivo de servicio demo1.service
+      copy:
+        dest: /etc/systemd/system/demo1.service
+        content: |
+          [Unit]
+          Description=Ejecutar el contenedor Tomcat demo1
+          After=network.target
+
+          [Service]
+          Type=simple
+          ExecStart=/usr/bin/podman run --replace -p 8080:8080 --name demo1 tomcat-demo:1
+          ExecStop=/usr/bin/podman stop demo1
+          ExecStopPost=/usr/bin/podman rm demo1
+          WorkingDirectory=/home/tomcat/contenedor/docker-tomcat-tutorial
+          Restart=always
+          RestartSec=10
+          User=soporte
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Recargar systemd para aplicar cambios
+      command: systemctl daemon-reload
+
+    - name: Habilitar el servicio demo1 para que se inicie al arrancar
+      systemd:
+        name: demo1
+        enabled: yes
+
+    - name: Iniciar el servicio demo1
+      systemd:
+        name: demo1
+        state: started
