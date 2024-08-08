@@ -15,7 +15,7 @@
         state: directory
         owner: soporte
         group: soporte
-        mode: '0755'
+        mode: '0777'
 
     - name: Copiar archivo todo.war
       copy:
@@ -23,7 +23,7 @@
         dest: /temporal/contenedor/todo.war
         owner: soporte
         group: soporte
-        mode: '0644'
+        mode: '0777'
 
     - name: Copiar archivo app.properties
       copy:
@@ -31,14 +31,14 @@
         dest: /temporal/contenedor/app.properties
         owner: soporte
         group: soporte
-        mode: '0644'
+        mode: '0777'
         
     - name: Configurar permisos de archivos
       file:
         path: /temporal/contenedor
         state: directory
         recurse: yes
-        mode: '0755'
+        mode: '0777'
         owner: soporte
         group: soporte
 
@@ -46,7 +46,7 @@
       file:
         path: /temporal/contenedor/todo.war
         state: file
-        mode: '0644'
+        mode: '0777'
         owner: soporte
         group: soporte
 
@@ -54,7 +54,7 @@
       file:
         path: /temporal/contenedor/app.properties
         state: file
-        mode: '0644'
+        mode: '0777'
         owner: soporte
         group: soporte
 
