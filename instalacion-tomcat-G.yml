@@ -69,8 +69,8 @@
           [Service]
           Type=simple
           ExecStart=/usr/bin/podman run --rm -p 7070:8080 \
-            -v /temporal/contenedor/todo.war:/usr/local/tomcat/webapps/todo.war \
-            -v /temporal/contenedor/app.properties:/opt/config/app.properties \
+            -v /temporal/contenedor/todo.war:/usr/local/tomcat/webapps/todo.war:Z \
+            -v /temporal/contenedor/app.properties:/opt/config/app.properties:Z \
             docker.io/library/tomcat:9.0
           ExecStop=/usr/bin/podman stop -t 2 tomcat-container
           Restart=always
@@ -83,12 +83,8 @@
       systemd:
         daemon_reload: yes
 
-    - name: Habilitar el servicio miservicio
+    - name: Habilitar y reiniciar el servicio miservicio
       systemd:
         name: miservicio.service
         enabled: yes
-        state: started
-
-...
-
-
+        state: restarted
